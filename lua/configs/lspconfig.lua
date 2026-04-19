@@ -1,7 +1,7 @@
 local M = {}
 
 M.on_init = function(client, _)
-    if client.supports_method("textDocument/semanticTokens") then
+    if client:supports_method("textDocument/semanticTokens") then
         client.server_capabilities.semanticTokensProvider = nil
     end
 end
@@ -74,7 +74,7 @@ M.defaults = function()
 end
 
 -- Additional servers + per-server overrides
-local servers = { "html", "cssls", "omnisharp", "jsonls", "ts_ls", "prettier", "vtsls", "gopls" }
+local servers = { "html", "cssls", "omnisharp", "jsonls", "ts_ls" }
 
 vim.lsp.config("ts_ls", {
     init_options = {

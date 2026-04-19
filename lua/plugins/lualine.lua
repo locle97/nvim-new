@@ -17,7 +17,7 @@ return {
 
         require("lualine").setup({
             options = {
-                theme = "catppuccin",
+                theme = "catppuccin-mocha",
                 globalstatus = true,
                 component_separators = { left = "", right = "" },
                 section_separators = { left = "", right = "" },
@@ -25,7 +25,7 @@ return {
             sections = {
                 lualine_a = { "mode" },
                 lualine_b = { "branch", "diff" },
-                lualine_c = { { "filename", path = 1 }, quarker_scope },
+                lualine_c = { { "filename", path = 1 }, { quarker_scope, color = { fg = "#FFD700" } } },
                 lualine_x = {
                     { "diagnostics", sources = { "nvim_lsp" } },
                     {
