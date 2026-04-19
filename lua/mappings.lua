@@ -130,9 +130,9 @@ map("n", "[c", function()
     if vim.wo.diff then vim.cmd.normal({ "[c", bang = true })
     else gitsigns.nav_hunk("prev") end
 end)
-map("n", "<leader>gs", gitsigns.stage_hunk)
+map("n", "gs", gitsigns.stage_hunk)
 map("n", "<leader>gr", gitsigns.reset_hunk)
-map("v", "<leader>gs", function() gitsigns.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end)
+map("v", "gs", function() gitsigns.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end)
 map("v", "<leader>gr", function() gitsigns.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end)
 map("n", "<leader>gd", gitsigns.toggle_deleted, { desc = "Toggle git deleted" })
 
