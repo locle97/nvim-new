@@ -58,7 +58,7 @@ M.copy_relative_path_with_lines = function()
     local l2 = vim.fn.line(".")
     local start_line = math.min(l1, l2)
     local end_line = math.max(l1, l2)
-    local result = relative_path .. ":" .. start_line .. "-" .. end_line
+    local result = relative_path .. " L" .. start_line .. "-" .. end_line
     vim.fn.setreg("+", result)
     vim.notify("Copied: " .. result, vim.log.levels.INFO)
 end
