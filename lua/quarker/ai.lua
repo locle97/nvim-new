@@ -178,9 +178,9 @@ Be concise. This is a working note, not documentation.
     return prompt
 end
 
-local function build_commit_msg_prompt(diff)
+local function build_commit_msg_prompt()
     return [[You are an expert developer writing git commit messages.
-Analyze the following staged diff and write a concise, informative commit message following conventional commits format.
+Run `git diff --cached` to inspect staged changes, then write a concise commit message following conventional commits format.
 
 Rules:
 - First line: type(scope): short description (max 72 chars)
@@ -188,11 +188,6 @@ Rules:
 - Optional blank line + body with more details if needed
 - Be specific about WHAT changed and WHY (not just "update files")
 - No period at end of subject line
-
-## Staged Diff
-```diff
-]] .. diff .. [[
-```
 
 Output ONLY the commit message text, no explanation or markdown code fences.
 ]]
@@ -522,7 +517,7 @@ function M.generate_commit_msg()
         "  (Working in background — you can switch windows)",
     })
 
-    local prompt = build_commit_msg_prompt(diff)
+    local prompt = build_commit_msg_prompt()
 
     run_ai_command(backend, prompt, function(result)
         vim.schedule(function()
