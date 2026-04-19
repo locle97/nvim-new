@@ -7,7 +7,7 @@ return {
         config = function()
             require("catppuccin").setup({
                 flavour = "mocha",
-                transparent_background = false,
+                transparent_background = true,
                 integrations = {
                     nvimtree = true,
                     telescope = { enabled = true },
