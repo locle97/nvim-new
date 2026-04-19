@@ -2,7 +2,7 @@ return {
     {
         "catppuccin/nvim",
         name = "catppuccin",
-        lazy = true,
+        lazy = false,
         priority = 1000, -- load before everything else
         config = function()
             require("catppuccin").setup({
@@ -19,6 +19,7 @@ return {
                     mini = { enabled = true },
                 },
             })
+            vim.cmd.colorscheme('catppuccin')
         end,
     },
     {
@@ -31,7 +32,7 @@ return {
               bold = true, -- Disable bold globally
               italic = false, -- Disable italic globally
             })
-            vim.cmd.colorscheme('vague')
+            -- vim.cmd.colorscheme('vague')
         end,
     }
 }

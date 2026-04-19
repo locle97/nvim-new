@@ -2,20 +2,16 @@ return {
     "hrsh7th/nvim-cmp",
     event = "InsertEnter",
     dependencies = {
-        -- Snippet engine
         {
             "L3MON4D3/LuaSnip",
             dependencies = "rafamadriz/friendly-snippets",
             opts = { history = true, updateevents = "TextChanged,TextChangedI" },
             config = function(_, opts)
                 require("luasnip").config.set_config(opts)
-
-                -- Load snippets
                 require("luasnip.loaders.from_vscode").lazy_load()
                 require("luasnip.loaders.from_snipmate").load()
                 require("luasnip.loaders.from_lua").load()
-                require("luasnip.loaders.from_lua").load({ paths = "~/.config/nvim-new/lua/snippets/" })
-
+                require("luasnip.loaders.from_lua").load({ paths = "~/.config/nvim/lua/snippets/" })
                 vim.api.nvim_create_autocmd("InsertLeave", {
                     callback = function()
                         local ls = require("luasnip")
@@ -28,8 +24,6 @@ return {
                 })
             end,
         },
-
-        -- Auto-pairs
         {
             "windwp/nvim-autopairs",
             opts = {
@@ -42,8 +36,6 @@ return {
                     require("nvim-autopairs.completion.cmp").on_confirm_done())
             end,
         },
-
-        -- CMP sources
         "saadparwaiz1/cmp_luasnip",
         "hrsh7th/cmp-nvim-lua",
         "hrsh7th/cmp-nvim-lsp",
@@ -53,6 +45,44 @@ return {
     config = function()
         local cmp = require("cmp")
 
+        local kind_icons = {
+            Text = "󰉿",
+            Method = "󰆧",
+            Function = "󰊕",
+            Constructor = "",
+            Field = "󰜢",
+            Variable = "󰀫",
+            Class = "󰠱",
+            Interface = "",
+            Module = "",
+            Property = "󰜢",
+            Unit = "󰑭",
+            Value = "󰎠",
+            Enum = "",
+            Keyword = "󰌋",
+            Snippet = "",
+            Color = "󰏘",
+            File = "󰈙",
+            Reference = "󰈇",
+            Folder = "󰉋",
+            EnumMember = "",
+            Constant = "󰏿",
+            Struct = "󰙅",
+            Event = "",
+            Operator = "󰆕",
+            TypeParameter = "",
+            Copilot = "",
+        }
+
+        local source_labels = {
+            copilot = "[Copilot]",
+            nvim_lsp = "[LSP]",
+            luasnip = "[Snip]",
+            buffer = "[Buf]",
+            nvim_lua = "[Lua]",
+            path = "[Path]",
+        }
+
         cmp.setup({
             completion = { completeopt = "menu,menuone" },
 
@@ -60,6 +90,26 @@ return {
                 expand = function(args)
                     require("luasnip").lsp_expand(args.body)
                 end,
+            },
+
+            formatting = {
+                format = function(entry, item)
+                    local icon = kind_icons[item.kind] or ""
+                    item.kind = string.format("%s %s", icon, item.kind)
+                    item.menu = source_labels[entry.source.name]
+                    return item
+                end,
+            },
+
+            window = {
+                completion = {
+                    side_padding = 1,
+                    scrollbar = false,
+                    border = "rounded",
+                },
+                documentation = {
+                    border = "rounded",
+                },
             },
 
             mapping = {
