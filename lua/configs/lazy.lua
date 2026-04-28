@@ -2,6 +2,7 @@ return {
     defaults = { lazy = true },
     rocks = { enabled = false },
     install = { colorscheme = { "catppuccin" } },
+    change_detection = { enabled = false, notify = false },
 
     ui = {
         icons = {
