@@ -1,6 +1,7 @@
 return {
-    "hrsh7th/nvim-cmp",
+    "saghen/blink.cmp",
     event = "InsertEnter",
+    version = "*",
     dependencies = {
         {
             "L3MON4D3/LuaSnip",
@@ -30,127 +31,86 @@ return {
                 fast_wrap = {},
                 disable_filetype = { "TelescopePrompt", "vim" },
             },
-            config = function(_, opts)
-                require("nvim-autopairs").setup(opts)
-                require("cmp").event:on("confirm_done",
-                    require("nvim-autopairs.completion.cmp").on_confirm_done())
-            end,
         },
-        "saadparwaiz1/cmp_luasnip",
-        "hrsh7th/cmp-nvim-lua",
-        "hrsh7th/cmp-nvim-lsp",
-        "hrsh7th/cmp-buffer",
-        "hrsh7th/cmp-path",
+        "giuxtaposition/blink-cmp-copilot",
     },
-    config = function()
-        local cmp = require("cmp")
+    opts = {
+        keymap = {
+            preset = "none",
+            ["<C-p>"] = { "select_prev", "fallback" },
+            ["<C-n>"] = { "select_next", "fallback" },
+            ["<C-d>"] = { "scroll_documentation_up", "fallback" },
+            ["<C-f>"] = { "scroll_documentation_down", "fallback" },
+            ["<C-Space>"] = { "show", "show_documentation", "hide_documentation" },
+            ["<C-e>"] = { "hide", "fallback" },
+            ["<CR>"] = { "accept", "fallback" },
+            ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
+            ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
+        },
 
-        local kind_icons = {
-            Text = "󰉿",
-            Method = "󰆧",
-            Function = "󰊕",
-            Constructor = "",
-            Field = "󰜢",
-            Variable = "󰀫",
-            Class = "󰠱",
-            Interface = "",
-            Module = "",
-            Property = "󰜢",
-            Unit = "󰑭",
-            Value = "󰎠",
-            Enum = "",
-            Keyword = "󰌋",
-            Snippet = "",
-            Color = "󰏘",
-            File = "󰈙",
-            Reference = "󰈇",
-            Folder = "󰉋",
-            EnumMember = "",
-            Constant = "󰏿",
-            Struct = "󰙅",
-            Event = "",
-            Operator = "󰆕",
-            TypeParameter = "",
-            Copilot = "",
-        }
-
-        local source_labels = {
-            copilot = "[Copilot]",
-            nvim_lsp = "[LSP]",
-            luasnip = "[Snip]",
-            buffer = "[Buf]",
-            nvim_lua = "[Lua]",
-            path = "[Path]",
-        }
-
-        cmp.setup({
-            completion = { completeopt = "menu,menuone" },
-
-            snippet = {
-                expand = function(args)
-                    require("luasnip").lsp_expand(args.body)
-                end,
+        appearance = {
+            kind_icons = {
+                Text = "󰉿",
+                Method = "󰆧",
+                Function = "󰊕",
+                Constructor = "",
+                Field = "󰜢",
+                Variable = "󰀫",
+                Class = "󰠱",
+                Interface = "",
+                Module = "",
+                Property = "󰜢",
+                Unit = "󰑭",
+                Value = "󰎠",
+                Enum = "",
+                Keyword = "󰌋",
+                Snippet = "",
+                Color = "󰏘",
+                File = "󰈙",
+                Reference = "󰈇",
+                Folder = "󰉋",
+                EnumMember = "",
+                Constant = "󰏿",
+                Struct = "󰙅",
+                Event = "",
+                Operator = "󰆕",
+                TypeParameter = "",
             },
+        },
 
-            formatting = {
-                format = function(entry, item)
-                    local icon = kind_icons[item.kind] or ""
-                    item.kind = string.format("%s %s", icon, item.kind)
-                    item.menu = source_labels[entry.source.name]
-                    return item
-                end,
+        completion = {
+            accept = {
+                auto_brackets = { enabled = true },
             },
-
-            window = {
-                completion = {
-                    side_padding = 1,
-                    scrollbar = false,
-                    border = "rounded",
-                },
-                documentation = {
-                    border = "rounded",
+            menu = {
+                border = "rounded",
+                scrollbar = false,
+                draw = {
+                    columns = {
+                        { "label", "label_description", gap = 1 },
+                        { "kind_icon", "kind", gap = 1 },
+                        { "source_name" },
+                    },
                 },
             },
-
-            mapping = {
-                ["<C-p>"] = cmp.mapping.select_prev_item(),
-                ["<C-n>"] = cmp.mapping.select_next_item(),
-                ["<C-d>"] = cmp.mapping.scroll_docs(-4),
-                ["<C-f>"] = cmp.mapping.scroll_docs(4),
-                ["<C-Space>"] = cmp.mapping.complete(),
-                ["<C-e>"] = cmp.mapping.close(),
-                ["<CR>"] = cmp.mapping.confirm({
-                    behavior = cmp.ConfirmBehavior.Insert,
-                    select = true,
-                }),
-                ["<Tab>"] = cmp.mapping(function(fallback)
-                    if cmp.visible() then
-                        cmp.select_next_item()
-                    elseif require("luasnip").expand_or_jumpable() then
-                        require("luasnip").expand_or_jump()
-                    else
-                        fallback()
-                    end
-                end, { "i", "s" }),
-                ["<S-Tab>"] = cmp.mapping(function(fallback)
-                    if cmp.visible() then
-                        cmp.select_prev_item()
-                    elseif require("luasnip").jumpable(-1) then
-                        require("luasnip").jump(-1)
-                    else
-                        fallback()
-                    end
-                end, { "i", "s" }),
+            documentation = {
+                auto_show = true,
+                window = { border = "rounded" },
             },
+        },
 
-            sources = {
-                { name = "copilot" },
-                { name = "nvim_lsp" },
-                { name = "luasnip" },
-                { name = "buffer" },
-                { name = "nvim_lua" },
-                { name = "path" },
+        snippets = { preset = "luasnip" },
+
+        sources = {
+            default = { "lsp", "path", "snippets", "buffer", "copilot" },
+            providers = {
+                copilot = {
+                    name = "Copilot",
+                    module = "blink-cmp-copilot",
+                    score_offset = 100,
+                    async = true,
+                },
             },
-        })
-    end,
+        },
+    },
 }
