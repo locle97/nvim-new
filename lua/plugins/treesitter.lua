@@ -1,36 +1,31 @@
 return {
     "nvim-treesitter/nvim-treesitter",
-    event = { "BufReadPost", "BufNewFile" },
-    cmd = { "TSInstall", "TSBufEnable", "TSBufDisable", "TSModuleInfo" },
+    branch = "main",
+    lazy = false,
     build = ":TSUpdate",
-    opts = {
-        ensure_installed = {
-            "lua", "luadoc", "printf", "vim", "vimdoc",
-            "bash", "c", "css", "dockerfile", "go", "html",
+    config = function()
+        local parsers = {
+            "lua", "css", "dockerfile", "go", "html",
             "javascript", "json", "markdown", "markdown_inline",
-            "python", "regex", "rust", "toml", "typescript",
-            "tsx", "yaml",
-        },
-        highlight = {
-            enable = true,
-            use_languagetree = true,
-        },
-        indent = { enable = true },
-    },
-    config = function(_, opts)
-        require("nvim-treesitter.config").setup(opts)
+            "python", "tsx", "vue", "c_sharp"
+        }
 
-        -- FileType fires before lazy-load completes, so treesitter's internal
-        -- handler misses the triggering buffer. Attach explicitly here and for
-        -- all future buffers.
+        require("nvim-treesitter").install(parsers)
+
+        local installed = {}
+        for _, lang in ipairs(require("nvim-treesitter.config").get_installed("parsers")) do
+            installed[lang] = true
+        end
+
         vim.api.nvim_create_autocmd("FileType", {
             group = vim.api.nvim_create_augroup("treesitter_attach", { clear = true }),
             callback = function(args)
-                pcall(vim.treesitter.start, args.buf)
+                local lang = vim.treesitter.language.get_lang(vim.bo[args.buf].filetype)
+                if not lang or not installed[lang] then return end
+
+                pcall(vim.treesitter.start, args.buf, lang)
+                vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
             end,
         })
-
-        -- Also apply to the buffer that caused this lazy load.
-        pcall(vim.treesitter.start, vim.api.nvim_get_current_buf())
     end,
 }
