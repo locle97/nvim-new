@@ -42,7 +42,6 @@ map("v", "<leader>/", "gc", { desc = "Toggle comment", remap = true })
 -- ── Toggles ───────────────────────────────────────────────────────────
 map("n", "<leader>n", "<cmd>set nu!<CR>", { desc = "Toggle line numbers" })
 map("n", "<leader>rn", "<cmd>set rnu!<CR>", { desc = "Toggle relative numbers" })
-map("n", "<leader>th", function() require("nvchad.themes").open() end, { desc = "Theme switcher" })
 
 -- ── Format ────────────────────────────────────────────────────────────
 map({ "n", "x" }, "<leader>fm", function()
