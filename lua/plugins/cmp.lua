@@ -35,6 +35,11 @@ return {
         "giuxtaposition/blink-cmp-copilot",
     },
     opts = {
+        enabled = function()
+            local disabled_filetypes = { NvimTree = true, DressingInput = true, DressingSelect = true }
+            return vim.bo.buftype ~= "prompt" and not disabled_filetypes[vim.bo.filetype]
+        end,
+
         keymap = {
             preset = "none",
             ["<C-p>"] = { "select_prev", "fallback" },
