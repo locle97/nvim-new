@@ -1,30 +1,38 @@
 return {
-    -- NvChad's theming engine: compiles 60+ themes to cache files at build time.
     {
-        "nvchad/base46",
+        "catppuccin/nvim",
+        name = "catppuccin",
         lazy = false,
-        priority = 1000,
-        build = function()
-            require("base46").load_all_highlights()
+        priority = 1000, -- load before everything else
+        config = function()
+            require("catppuccin").setup({
+                flavour = "mocha",
+                transparent_background = true,
+                integrations = {
+                    nvimtree = true,
+                    telescope = { enabled = true },
+                    gitsigns = true,
+                    indent_blankline = { enabled = true },
+                    cmp = true,
+                    treesitter = true,
+                    bufferline = true,
+                    mini = { enabled = true },
+                },
+            })
+            vim.cmd.colorscheme('catppuccin')
         end,
     },
-
-    -- NvChad UI provides the `nvchad.themes` picker module.
-    -- Loaded lazily on the theme-switcher keybinding so its statusline/tabufline
-    -- code never runs (we use lualine + bufferline instead).
     {
-        "nvchad/ui",
-        keys = {
-            {
-                "<leader>th",
-                function() require("nvchad.themes").open() end,
-                desc = "Theme switcher",
-            },
-        },
-        dependencies = { "nvchad/volt", "nvim-lua/plenary.nvim", "nvim-tree/nvim-web-devicons" },
-    },
-
-    { "nvchad/volt",         lazy = true },
-    { "nvim-lua/plenary.nvim" },
-    { "nvim-tree/nvim-web-devicons", lazy = true },
+        "vague-theme/vague.nvim",
+        lazy = false,
+        priority = 1000, -- load before everything else
+        config = function()
+            require('vague').setup({
+              transparent = true, -- If true, background is not set
+              bold = true, -- Disable bold globally
+              italic = false, -- Disable italic globally
+            })
+            -- vim.cmd.colorscheme('vague')
+        end,
+    }
 }
