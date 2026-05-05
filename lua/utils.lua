@@ -1,4 +1,4 @@
-M = {}
+local M = {}
 
 M.remove_other_buffers = function()
     local current_buf = vim.api.nvim_get_current_buf()

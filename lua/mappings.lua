@@ -22,12 +22,6 @@ map("i", "<C-l>", "<Right>", { desc = "Move right" })
 map("i", "<C-j>", "<Down>", { desc = "Move down" })
 map("i", "<C-k>", "<Up>", { desc = "Move up" })
 
--- ── Window navigation ─────────────────────────────────────────────────
-map("n", "<C-h>", "<C-w>h", { desc = "Window left" })
-map("n", "<C-l>", "<C-w>l", { desc = "Window right" })
-map("n", "<C-j>", "<C-w>j", { desc = "Window down" })
-map("n", "<C-k>", "<C-w>k", { desc = "Window up" })
-
 -- ── Buffer navigation ─────────────────────────────────────────────────
 map("n", "<tab>", "<cmd>bnext<CR>", { desc = "Buffer next" })
 map("n", "<S-tab>", "<cmd>bprevious<CR>", { desc = "Buffer prev" })
@@ -61,7 +55,6 @@ map("n", "<leader>cm", "<cmd>Telescope git_commits<CR>", { desc = "Git commits" 
 map("n", "<leader>gs", "<cmd>Telescope git_status<CR>", { desc = "Git status" })
 map("n", "<leader>fa", "<cmd>Telescope find_files follow=true no_ignore=true hidden=true<CR>",
     { desc = "Find all files" })
-map("n", "<leader>fp", "<cmd>Telescope projects<CR>", { desc = "Projects" })
 map("n", "<leader>fF", "<cmd>Telescope find_files<CR>", { desc = "Find files (plain)" })
 -- Quarker-enhanced find_files
 map("n", "<C-p>", function() require("quarker.telescope_integration").find_files() end,
@@ -86,7 +79,7 @@ map("t", "<C-x>", "<C-\\><C-N>", { desc = "Terminal: exit terminal mode" })
 
 -- ── LSP ───────────────────────────────────────────────────────────────
 map("n", "<leader>ds", vim.diagnostic.setloclist, { desc = "LSP diagnostic loclist" })
-map("n", "<leader>f", function() vim.diagnostic.open_float(nil, { border = "rounded" }) end,
+map("n", "<leader>dd", function() vim.diagnostic.open_float(nil, { border = "rounded" }) end,
     { desc = "Floating diagnostic" })
 map("n", "<leader>q", function() require("telescope.builtin").diagnostics({ bufnr = 0 }) end,
     { desc = "Buffer diagnostics" })
