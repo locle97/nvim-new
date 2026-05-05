@@ -49,7 +49,7 @@ return {
             sections = {
                 lualine_a = { "mode" },
                 lualine_b = { "branch", "diff" },
-                lualine_c = { { "filename", path = 1 }, { quarker_scope, color = { fg = "#FFD700" } } },
+                lualine_c = { { "filename", path = 0 }, { quarker_scope, color = { fg = "#FFD700" } } },
                 lualine_x = {
                     { "diagnostics", sources = { "nvim_lsp" } },
                     {
@@ -69,7 +69,7 @@ return {
                 lualine_z = { "location" },
             },
             inactive_sections = {
-                lualine_c = { { "filename", path = 1 } },
+                lualine_c = { { "filename", path = 0 } },
                 lualine_x = { "location" },
             },
         }
