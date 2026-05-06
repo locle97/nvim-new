@@ -19,7 +19,7 @@ return {
                     mini = { enabled = true },
                 },
             })
-            vim.cmd.colorscheme('catppuccin')
+            -- vim.cmd.colorscheme('catppuccin')
         end,
     },
     {
@@ -28,11 +28,23 @@ return {
         priority = 1000, -- load before everything else
         config = function()
             require('vague').setup({
-              transparent = true, -- If true, background is not set
-              bold = true, -- Disable bold globally
-              italic = false, -- Disable italic globally
+                transparent = true, -- If true, background is not set
+                bold = true,      -- Disable bold globally
+                italic = false,   -- Disable italic globally
             })
             -- vim.cmd.colorscheme('vague')
         end,
+    },
+    {
+        'sainnhe/everforest',
+        lazy = false,
+        priority = 1000,
+        config = function()
+            -- Optionally configure and load the colorscheme
+            -- directly inside the plugin declaration.
+            vim.g.everforest_enable_italic = true
+            vim.g.everforest_transparent_background = 2
+            vim.cmd.colorscheme('everforest')
+        end
     }
 }
