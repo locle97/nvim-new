@@ -24,7 +24,9 @@ return {
                 if not lang or not installed[lang] then return end
 
                 pcall(vim.treesitter.start, args.buf, lang)
-                vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+                if vim.treesitter.query.get(lang, "indents") then
+                    vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+                end
             end,
         })
     end,
