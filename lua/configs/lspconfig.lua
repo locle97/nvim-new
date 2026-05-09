@@ -74,7 +74,11 @@ M.defaults = function()
 end
 
 -- Additional servers + per-server overrides
-local servers = { "html", "cssls", "omnisharp", "jsonls", "ts_ls" }
+vim.lsp.config("roslyn_ls", {
+    cmd = { "roslyn", "--logLevel", "Information", "--extensionLogDirectory", "/tmp/roslyn_ls/logs", "--stdio" },
+})
+
+local servers = { "html", "cssls", "roslyn_ls", "jsonls", "ts_ls" }
 
 vim.lsp.enable(servers)
 
