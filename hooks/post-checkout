@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Quarker: on branch checkout, switch to a per-branch scope (creating it if
+# missing). Install with: hooks/install-post-checkout.sh [repo-dir]
+# git args: $1=prev-HEAD  $2=new-HEAD  $3=branch-checkout-flag (1=branch).
+# Never block the checkout: always exit 0.
+
+# Only react to branch checkouts, not file checkouts.
+[ "$3" = "1" ] || exit 0
+
+# Resolve the current branch; skip on detached HEAD.
+branch="$(git symbolic-ref --short -q HEAD)" || exit 0
+[ -n "$branch" ] || exit 0
+
+# Branch -> scope: last path segment, then any char outside [A-Za-z0-9_-] -> '-'.
+scope="${branch##*/}"
+scope="$(printf '%s' "$scope" | tr -c 'a-zA-Z0-9_-' '-')"
+scope="${scope%-}"   # drop a trailing '-' tr may leave
+[ -n "$scope" ] || exit 0
+
+command -v nvim >/dev/null 2>&1 || {
+    echo "quarker post-checkout: nvim not found on PATH; skipping" >&2
+    exit 0
+}
+
+cli="${QUARKER_CLI:-${XDG_CONFIG_HOME:-$HOME/.config}/nvim/lua/quarker/cli.lua}"
+[ -f "$cli" ] || {
+    echo "quarker post-checkout: cli not found at $cli; skipping" >&2
+    exit 0
+}
+
+# Keep stdout clean; route CLI output to stderr; never fail the checkout.
+nvim -l "$cli" scope switch "$scope" --create >&2 \
+    || echo "quarker post-checkout: failed to switch scope to '$scope'" >&2
+
+exit 0
