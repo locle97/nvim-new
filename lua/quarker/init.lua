@@ -341,6 +341,35 @@ function M.mark()
     save_marks(base_scope, scope_name)
 end
 
+-- Mark a file by absolute path (headless-friendly; used by the CLI/hook).
+-- Mirrors M.mark() but takes a path instead of reading the current buffer.
+-- Returns true if a new mark was added, false if it was already marked.
+function M.mark_file(abspath)
+    if not abspath or abspath == "" then
+        return false
+    end
+
+    local base_scope = get_base_scope()
+    local scope_name = get_active_scope_name()
+    local relative_path = get_relative_path(abspath, base_scope)
+    local scope_marks = get_marks()
+
+    for _, mark in ipairs(scope_marks) do
+        if mark.path == relative_path then
+            return false
+        end
+    end
+
+    table.insert(scope_marks, {
+        path = relative_path,
+        full_path = abspath,
+        name = vim.fn.fnamemodify(abspath, ":t")
+    })
+
+    save_marks(base_scope, scope_name)
+    return true
+end
+
 -- Unmark current file
 function M.unmark()
     local filepath = vim.fn.expand("%:p")
