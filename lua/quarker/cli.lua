@@ -48,7 +48,37 @@ elseif cmd == "mark-plan" then
         q.mark_file(vim.fn.fnamemodify(p, ":p"))
     end
     os.exit(0)
+elseif cmd == "scope" then
+    local sub = arg[2]
+    if sub == "switch" then
+        -- Accept the name in any position; --create may precede or follow it.
+        local name, create
+        for i = 3, #arg do
+            if arg[i] == "--create" then
+                create = true
+            elseif not name then
+                name = arg[i]
+            end
+        end
+        if not name or name == "" then
+            io.stderr:write("scope switch: missing scope name\n")
+            os.exit(1)
+        end
+        local q = require("quarker")
+        if create then
+            -- Idempotent: create_scope returns false (and notifies stderr) if it
+            -- already exists; we only care that switch succeeds afterward.
+            q.create_scope(name)
+        end
+        if not q.switch_scope(name) then
+            os.exit(1)
+        end
+        os.exit(0)
+    else
+        io.stderr:write("usage: scope switch <name> [--create]\n")
+        os.exit(1)
+    end
 else
-    io.stderr:write("usage: nvim -l cli.lua <mark <path...> | mark-plan <planfile>>\n")
+    io.stderr:write("usage: nvim -l cli.lua <mark <path...> | mark-plan <planfile> | scope switch <name> [--create]>\n")
     os.exit(1)
 end
