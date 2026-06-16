@@ -38,4 +38,24 @@ function M.compute_statuses(paths)
     return rows
 end
 
+-- Mark every relative path into the active scope, regardless of on-disk
+-- existence. Reuses quarker.mark_file (returns true when newly added, false
+-- when already marked) so the on-disk format cannot drift.
+-- Returns: { added = number, duplicate = number }
+function M.confirm_marks(paths)
+    local base = get_quarker().get_scope()
+    local added, duplicate = 0, 0
+
+    for _, path in ipairs(paths) do
+        local abs = base .. "/" .. path
+        if get_quarker().mark_file(abs) then
+            added = added + 1
+        else
+            duplicate = duplicate + 1
+        end
+    end
+
+    return { added = added, duplicate = duplicate }
+end
+
 return M
