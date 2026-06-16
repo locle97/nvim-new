@@ -1097,6 +1097,11 @@ M.show_context_ui = function()
     require("quarker.ui").show_context()
 end
 
+-- Mark every file path parsed from the current visual selection.
+M.mark_selection = function()
+    require("quarker.selection").mark_from_visual()
+end
+
 -- Module re-exports for convenience
 M.context = require("quarker.context")
 M.ai = require("quarker.ai")

@@ -13,6 +13,14 @@ return {
             desc = "Quarker: Toggle mark file"
         },
         {
+            "<leader>m",
+            function()
+                require("quarker").mark_selection()
+            end,
+            mode = "v",
+            desc = "Quarker: Mark files from selection"
+        },
+        {
             "<leader><leader>",
             function()
                 require("quarker").show_marks_ui()
