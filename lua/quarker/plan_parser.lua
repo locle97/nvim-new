@@ -41,4 +41,27 @@ function M.extract_paths(content)
     return paths
 end
 
+-- Loose extractor for a raw text selection (e.g. a visual selection of a
+-- plan's Files block). Pulls every backtick-quoted token, strips any trailing
+-- :line or :start-end range, and keeps it only if it looks like a file path:
+-- no whitespace and contains a directory separator. The slash requirement
+-- excludes inline code such as `:Quarker mark` or `vim.fn.expand`.
+-- Dedupes and preserves first-seen order.
+function M.extract_paths_from_text(text)
+    local paths = {}
+    local seen = {}
+
+    for token in (text or ""):gmatch("`([^`]+)`") do
+        local path = strip_range(token)
+        if not path:find("%s") and path:find("/") then
+            if path ~= "" and not seen[path] then
+                seen[path] = true
+                table.insert(paths, path)
+            end
+        end
+    end
+
+    return paths
+end
+
 return M
