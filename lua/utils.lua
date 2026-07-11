@@ -133,11 +133,34 @@ do
         return vim.fn.filereadable(name) == 1
     end
 
+    -- The file (and line) the diff tab is showing right now. codediff diffs the
+    -- real file buffer, so this is the buffer to land on when the mode ends.
+    local function reviewed_at()
+        if not (diff_tab and vim.api.nvim_tabpage_is_valid(diff_tab)) then
+            return nil
+        end
+        local ok, lifecycle = pcall(require, "codediff.ui.lifecycle")
+        local session = ok and lifecycle.get_session(diff_tab) or nil
+        if not (session and session.modified_bufnr and is_reviewable(session.modified_bufnr)) then
+            return nil
+        end
+        local cursor = nil
+        if session.modified_win and vim.api.nvim_win_is_valid(session.modified_win) then
+            cursor = vim.api.nvim_win_get_cursor(session.modified_win)
+        end
+        return session.modified_bufnr, cursor
+    end
+
     local function stop()
         if augroup then
             pcall(vim.api.nvim_del_augroup_by_id, augroup)
             augroup = nil
         end
+
+        -- Leaving the mode should put you where you were reviewing, not back on
+        -- whichever file you happened to turn it on from.
+        local last_buf, last_cursor = reviewed_at()
+
         local tab = diff_tab
         diff_tab = nil
         pending_buf = nil
@@ -149,6 +172,21 @@ do
             vim.api.nvim_set_current_tabpage(origin_tab)
         end
         origin_tab = nil
+
+        if not (last_buf and vim.api.nvim_buf_is_valid(last_buf)) then
+            return
+        end
+        -- Land in a normal window, never in a side panel such as nvim-tree.
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+            if vim.bo[vim.api.nvim_win_get_buf(win)].buftype == "" then
+                vim.api.nvim_set_current_win(win)
+                vim.api.nvim_win_set_buf(win, last_buf)
+                if last_cursor then
+                    pcall(vim.api.nvim_win_set_cursor, win, last_cursor)
+                end
+                return
+            end
+        end
     end
 
     -- Point the diff tab at `buf`. Resolving a file is async, so a switch that
