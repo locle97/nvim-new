@@ -1,17 +1,13 @@
 local M = {}
 
--- State to track open windows and prevent duplicates
-M.state = {
-    marks_win = nil,
-    scopes_win = nil,
-    context_win = nil,
-}
+-- Open window per win_type, so opening a float twice replaces it instead of stacking.
+M.state = {}
 
 -- Get window configuration for centered floating window
 -- @param width_ratio number Width as ratio of screen (0.0-1.0)
 -- @param height_ratio number Height as ratio of screen (0.0-1.0)
--- @param title string Optional window title
--- @param footer string Optional window footer
+-- @param title string|table Optional window title; a list of {text, hl_group} chunks renders it highlighted
+-- @param footer string|table Optional window footer
 -- @return table Window configuration for nvim_open_win
 function M.get_window_config(width_ratio, height_ratio, title, footer)
     local screen_w = vim.opt.columns:get()
@@ -48,8 +44,26 @@ function M.get_window_config(width_ratio, height_ratio, title, footer)
     return config
 end
 
+-- Create a scratch buffer for a float
+-- @param opts table Options: bufhidden ("wipe" by default; "hide" for buffers that
+--        outlive being displayed, such as the panel's inactive tab)
+-- @return number bufnr
+function M.create_buf(opts)
+    opts = opts or {}
+    local bufnr = vim.api.nvim_create_buf(false, true)
+
+    vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
+    vim.api.nvim_buf_set_option(bufnr, "bufhidden", opts.bufhidden or "wipe")
+    vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
+    vim.api.nvim_buf_set_option(bufnr, "filetype", "quarker")
+
+    return bufnr
+end
+
 -- Create a floating window with buffer
--- @param opts table Options: width_ratio, height_ratio, title, footer, win_type
+-- @param opts table Options: width_ratio, height_ratio, title, footer, win_type, bufnr
+--        bufnr: display an existing buffer instead of creating one (the panel owns
+--        one buffer per tab and swaps them into a single window)
 -- @return number, number bufnr, winid
 function M.create_float_win(opts)
     opts = opts or {}
@@ -57,28 +71,15 @@ function M.create_float_win(opts)
     local height_ratio = opts.height_ratio or 0.7
     local title = opts.title or ""
     local footer = opts.footer
-    local win_type = opts.win_type or "marks" -- "marks" or "scopes" or "context"
+    local win_type = opts.win_type or "marks"
 
     -- Close existing window of the same type if open
-    if win_type == "marks" and M.state.marks_win then
-        M.close_float_win(M.state.marks_win)
-        M.state.marks_win = nil
-    elseif win_type == "scopes" and M.state.scopes_win then
-        M.close_float_win(M.state.scopes_win)
-        M.state.scopes_win = nil
-    elseif win_type == "context" and M.state.context_win then
-        M.close_float_win(M.state.context_win)
-        M.state.context_win = nil
+    if M.state[win_type] then
+        M.close_float_win(M.state[win_type])
+        M.state[win_type] = nil
     end
 
-    -- Create buffer
-    local bufnr = vim.api.nvim_create_buf(false, true)
-
-    -- Set buffer options
-    vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
-    vim.api.nvim_buf_set_option(bufnr, "bufhidden", "wipe")
-    vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
-    vim.api.nvim_buf_set_option(bufnr, "filetype", "quarker")
+    local bufnr = opts.bufnr or M.create_buf()
 
     -- Get window config and open window
     local win_config = M.get_window_config(width_ratio, height_ratio, title, footer)
@@ -90,31 +91,39 @@ function M.create_float_win(opts)
     vim.api.nvim_win_set_option(winid, "number", false)
     vim.api.nvim_win_set_option(winid, "relativenumber", false)
 
-    -- Store window reference
-    if win_type == "marks" then
-        M.state.marks_win = winid
-    elseif win_type == "scopes" then
-        M.state.scopes_win = winid
-    elseif win_type == "context" then
-        M.state.context_win = winid
-    end
+    M.state[win_type] = winid
 
-    -- Setup autocmd for cleanup
-    vim.api.nvim_create_autocmd("BufWipeout", {
-        buffer = bufnr,
+    -- The window, not the buffer, is what the state tracks: a window whose buffer
+    -- can be swapped (the panel) must clear its slot when the window closes.
+    vim.api.nvim_create_autocmd("WinClosed", {
+        pattern = tostring(winid),
         once = true,
         callback = function()
-            if win_type == "marks" then
-                M.state.marks_win = nil
-            elseif win_type == "scopes" then
-                M.state.scopes_win = nil
-            elseif win_type == "context" then
-                M.state.context_win = nil
-            end
+            M.state[win_type] = nil
         end,
     })
 
     return bufnr, winid
+end
+
+-- Update an open float's border title/footer in place
+-- @param winid number Window ID
+-- @param title string|table Title, or a list of {text, hl_group} chunks
+-- @param footer string|table Optional footer
+function M.set_border(winid, title, footer)
+    if not (winid and vim.api.nvim_win_is_valid(winid)) then
+        return
+    end
+
+    local config = vim.api.nvim_win_get_config(winid)
+    config.title = title
+    config.title_pos = "center"
+    if footer then
+        config.footer = footer
+        config.footer_pos = "center"
+    end
+
+    vim.api.nvim_win_set_config(winid, config)
 end
 
 -- Close a floating window safely

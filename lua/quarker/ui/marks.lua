@@ -1,5 +1,12 @@
+-- The Marks tab of the Quarker panel.
+--
+-- This buffer is deliberately editable: reordering or deleting lines is how you
+-- reorder or remove marks, and the buffer is synced back to Quarker whenever the
+-- tab is left (tab switch or close).
 local float = require("quarker.ui.float")
 local M = {}
+
+local EMPTY_MESSAGE = "No marks in this scope"
 
 -- Get filetype icon with color
 local function get_filetype_icon(filename)
@@ -92,26 +99,21 @@ local function generate_mark_lines(marks)
     return lines, highlights
 end
 
--- Render marks to buffer
-local function render_marks(bufnr, marks)
-    local lines, highlights = generate_mark_lines(marks)
-    float.render_lines(bufnr, lines, highlights)
-end
-
--- Sync buffer content back to marks
-local function sync_buffer_to_marks(bufnr, original_marks, quarker)
+-- Sync buffer content back to marks.
+-- The lookup is rebuilt from Quarker's *current* marks rather than a snapshot taken
+-- when the panel opened, so a mark added while the panel is open (the git tab's `m`)
+-- survives this sync instead of being parsed as unknown and dropped.
+local function sync_buffer_to_marks(bufnr)
+    local quarker = require("quarker")
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-    local new_marks = {}
 
-    -- Build a lookup table from original marks by path
     local path_to_mark = {}
-    for _, mark in ipairs(original_marks) do
+    for _, mark in ipairs(quarker.get_marks()) do
         path_to_mark[mark.path] = mark
     end
 
-    -- Parse each line and rebuild marks list
+    local new_marks = {}
     for _, line in ipairs(lines) do
-        -- Skip empty lines
         if line ~= "" then
             local path = parse_mark_line(line)
             if path and path_to_mark[path] then
@@ -120,122 +122,102 @@ local function sync_buffer_to_marks(bufnr, original_marks, quarker)
         end
     end
 
-    -- Update marks in quarker
     quarker.set_marks(new_marks)
 end
 
--- Main function to show marks in floating buffer
-function M.show_marks(force_cursor_line)
+-- Tab bar label
+function M.title(_)
+    local quarker = require("quarker")
+    return string.format("Marks (%s)", quarker.get_active_scope_name())
+end
+
+function M.footer()
+    return "<CR> open   1-9 jump   dd/p reorder   <Tab> git"
+end
+
+function M.render(ctx)
     local quarker = require("quarker")
     local marks = quarker.get_marks()
 
-    if #marks == 0 then
-        vim.notify("No marks found in current scope", vim.log.levels.INFO)
+    ctx.empty = #marks == 0
+
+    if ctx.empty then
+        float.render_lines(ctx.bufnr, { EMPTY_MESSAGE }, {
+            { line = 1, col_start = 0, col_end = -1, hl_group = "Comment" },
+        })
+        vim.api.nvim_buf_set_option(ctx.bufnr, "modifiable", false)
         return
     end
 
-    -- Get scope info for title
-    local scope_name = quarker.get_active_scope_name()
-    local scope_path = quarker.get_scope()
-    local title = string.format(" Quarker Marks (%s) ", scope_name)
+    local lines, highlights = generate_mark_lines(marks)
+    float.render_lines(ctx.bufnr, lines, highlights)
+    vim.api.nvim_buf_set_option(ctx.bufnr, "modifiable", true)
 
-    -- Create floating window
-    local bufnr, winid = float.create_float_win({
-        width_ratio = 0.6,
-        height_ratio = 0.7,
-        title = title,
-        win_type = "marks",
-    })
+    -- Land on the file you are currently in, but only the first time the tab is
+    -- shown: after that the cursor is wherever you left it.
+    if not ctx.positioned then
+        ctx.positioned = true
+        local line = get_cursor_position(marks, quarker.get_scope())
+        pcall(vim.api.nvim_win_set_cursor, ctx.winid, { math.min(line, #lines), 0 })
+    end
+end
 
-    -- Render marks
-    render_marks(bufnr, marks)
+-- Editing the buffer *is* the edit, so the buffer is the source of truth on leave.
+function M.on_leave(ctx)
+    if ctx.empty then
+        return
+    end
+    sync_buffer_to_marks(ctx.bufnr)
+end
 
-    -- Set cursor position
-    local cursor_line = force_cursor_line or get_cursor_position(marks, scope_path)
-    local total_lines = vim.api.nvim_buf_line_count(bufnr)
-    cursor_line = math.min(cursor_line, total_lines)
-    cursor_line = math.max(cursor_line, 1)
-    vim.api.nvim_win_set_cursor(winid, { cursor_line, 0 })
+function M.keymaps(ctx)
+    local quarker = require("quarker")
 
-    -- Store original marks for syncing
-    local original_marks = vim.deepcopy(marks)
+    -- Navigate by path rather than by buffer line: the marks may have been
+    -- reordered in the buffer, and the sync above is what makes that authoritative.
+    local function navigate_to(path)
+        M.on_leave(ctx)
+        ctx.close()
 
-    -- Setup autocmd to sync changes when leaving buffer
-    local augroup = vim.api.nvim_create_augroup("QuarkerMarksSync", { clear = true })
-
-    vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
-        group = augroup,
-        buffer = bufnr,
-        once = true,
-        callback = function()
-            sync_buffer_to_marks(bufnr, original_marks, quarker)
-            vim.api.nvim_del_augroup_by_id(augroup)
-        end,
-    })
-
-    -- Navigate to mark under cursor
-    local function navigate()
-        local line = vim.api.nvim_win_get_cursor(winid)[1]
-        local buf_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-        local current_line = buf_lines[line]
-
-        if current_line and current_line ~= "" then
-            local path = parse_mark_line(current_line)
-            if path then
-                -- Sync first so marks are updated
-                sync_buffer_to_marks(bufnr, original_marks, quarker)
-                float.close_float_win(winid)
-
-                -- Find the mark index in the updated marks
-                local updated_marks = quarker.get_marks()
-                for i, mark in ipairs(updated_marks) do
-                    if mark.path == path then
-                        quarker.navigate(i)
-                        return
-                    end
-                end
+        for i, mark in ipairs(quarker.get_marks()) do
+            if mark.path == path then
+                quarker.navigate(i)
+                return
             end
         end
-        vim.notify("Invalid mark line", vim.log.levels.WARN)
     end
 
-    local function close_window()
-        -- Sync changes before closing
-        sync_buffer_to_marks(bufnr, original_marks, quarker)
-        float.close_float_win(winid)
+    local function navigate()
+        if ctx.empty then
+            return
+        end
+
+        local line = vim.api.nvim_win_get_cursor(ctx.winid)[1]
+        local text = vim.api.nvim_buf_get_lines(ctx.bufnr, line - 1, line, false)[1]
+        local path = text and text ~= "" and parse_mark_line(text) or nil
+
+        if not path then
+            vim.notify("Invalid mark line", vim.log.levels.WARN)
+            return
+        end
+        navigate_to(path)
     end
 
-    -- Quick jump to mark by number
     local function make_jump_handler(index)
         return function()
-            if index <= #marks then
-                local mark = marks[index]
-                -- Sync before navigating
-                sync_buffer_to_marks(bufnr, original_marks, quarker)
-                float.close_float_win(winid)
-
-                -- Find the mark index in the updated marks
-                local updated_marks = quarker.get_marks()
-                for i, m in ipairs(updated_marks) do
-                    if m.path == mark.path then
-                        quarker.navigate(i)
-                        return
-                    end
-                end
-            else
+            local marks = quarker.get_marks()
+            if index > #marks then
                 vim.notify(string.format("Mark %d does not exist", index), vim.log.levels.WARN)
+                return
             end
+            navigate_to(marks[index].path)
         end
     end
 
-    -- Minimal keymaps - let the buffer behave normally otherwise
     local keymaps = {
         { mode = "n", key = "<CR>", callback = navigate, desc = "Navigate to mark" },
-        { mode = "n", key = "q", callback = close_window, desc = "Close and save" },
-        { mode = "n", key = "<Esc>", callback = close_window, desc = "Close and save" },
     }
 
-    -- Add number keys 1-9 for quick jump
     for i = 1, 9 do
         table.insert(keymaps, {
             mode = "n",
@@ -245,7 +227,7 @@ function M.show_marks(force_cursor_line)
         })
     end
 
-    float.set_float_keymaps(bufnr, keymaps)
+    return keymaps
 end
 
 return M
