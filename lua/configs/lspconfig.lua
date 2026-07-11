@@ -78,7 +78,7 @@ vim.lsp.config("roslyn_ls", {
     cmd = { "roslyn", "--logLevel", "Information", "--extensionLogDirectory", "/tmp/roslyn_ls/logs", "--stdio" },
 })
 
-local servers = { "html", "cssls", "roslyn_ls", "jsonls", "ts_ls" }
+local servers = { "html", "cssls", "roslyn_ls", "jsonls", "ts_ls", "arduino" }
 
 vim.lsp.enable(servers)
 
