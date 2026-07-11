@@ -115,7 +115,7 @@ function M.title(ctx)
 end
 
 function M.footer()
-    return "<CR> open   d diff   s stage   m mark   r refresh   <Tab> marks"
+    return "<CR> open   d diff   <leader> stage   m mark   r refresh   <Tab> marks"
 end
 
 function M.render(ctx)
@@ -249,7 +249,7 @@ function M.keymaps(ctx)
     return {
         { mode = "n", key = "<CR>", callback = open, desc = "Open file" },
         { mode = "n", key = "d", callback = diff, desc = "Diff against HEAD" },
-        { mode = "n", key = "s", callback = stage, desc = "Stage/unstage file" },
+        { mode = "n", key = "<leader>", callback = stage, desc = "Stage/unstage file" },
         { mode = "n", key = "m", callback = mark, desc = "Mark file in Quarker" },
         { mode = "n", key = "r", callback = refresh, desc = "Refresh git status" },
     }
