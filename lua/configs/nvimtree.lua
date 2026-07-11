@@ -1,7 +1,62 @@
 local HEIGHT_RATIO = 1
 local WIDTH_RATIO = 1
 
+-- Anything staged in the index for this path? (index status is the first column
+-- of --porcelain; " " means unstaged, "?" means untracked)
+local function has_staged(dir, path)
+    local lines = vim.fn.systemlist({ "git", "-C", dir, "status", "--porcelain", "--", path })
+    if vim.v.shell_error ~= 0 then
+        return nil, table.concat(lines, "\n")
+    end
+    for _, line in ipairs(lines) do
+        local index = line:sub(1, 1)
+        if index ~= " " and index ~= "?" and index ~= "" then
+            return true
+        end
+    end
+    return false
+end
+
+local function toggle_stage()
+    local api = require("nvim-tree.api")
+    local node = api.tree.get_node_under_cursor()
+    if not node or not node.absolute_path or node.name == ".." then
+        return
+    end
+
+    local path = node.absolute_path
+    local dir = node.type == "directory" and path or vim.fn.fnamemodify(path, ":h")
+
+    local staged, err = has_staged(dir, path)
+    if staged == nil then
+        vim.notify(err, vim.log.levels.ERROR)
+        return
+    end
+
+    local cmd = staged and { "git", "-C", dir, "restore", "--staged", "--", path }
+        or { "git", "-C", dir, "add", "--", path }
+    local output = vim.fn.systemlist(cmd)
+    if vim.v.shell_error ~= 0 then
+        vim.notify(table.concat(output, "\n"), vim.log.levels.ERROR)
+        return
+    end
+
+    api.tree.reload()
+    vim.notify((staged and "Unstaged: " or "Staged: ") .. node.name, vim.log.levels.INFO)
+end
+
 return {
+    on_attach = function(bufnr)
+        local api = require("nvim-tree.api")
+        api.config.mappings.default_on_attach(bufnr)
+        vim.keymap.set("n", "<leader>gs", toggle_stage, {
+            buffer = bufnr,
+            noremap = true,
+            silent = true,
+            nowait = true,
+            desc = "nvim-tree: stage/unstage file under cursor",
+        })
+    end,
     filters = { dotfiles = false },
     disable_netrw = true,
     hijack_cursor = true,
