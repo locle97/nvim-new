@@ -127,7 +127,7 @@ map("n", "<leader>gs", gitsigns.stage_hunk)
 map("n", "<leader>gr", gitsigns.reset_hunk)
 map("v", "<leader>gs", function() gitsigns.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end)
 map("v", "<leader>gr", function() gitsigns.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end)
-map("n", "<leader>gd", gitsigns.toggle_deleted, { desc = "Toggle git deleted" })
+map("n", "<leader>gd", function() require("utils").toggle_file_diff() end, { desc = "Toggle codediff review" })
 
 -- ── Tmux ──────────────────────────────────────────────────────────────
 map("n", "<C-h>", "<cmd>TmuxNavigateLeft<CR>")
