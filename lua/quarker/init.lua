@@ -436,6 +436,14 @@ function M.get_scope()
     return get_base_scope()
 end
 
+-- Per-repository data directory, created on demand. The layout of Quarker's data
+-- dir is owned here; other modules that persist repo state (hidden.lua) ask for
+-- the directory rather than recomputing the hash.
+-- @param base_scope string|nil Repository path; defaults to the current base scope
+function M.get_repo_dir(base_scope)
+    return get_repo_dir(base_scope or get_base_scope())
+end
+
 -- Get active scope name
 function M.get_active_scope_name()
     return get_active_scope_name()
